@@ -189,7 +189,6 @@ class SignLanguageProcessor(VideoProcessorBase):
         # Draw hand landmarks on black canvas
         if self.extractor.hands_result and self.extractor.hands_result.hand_landmarks:
             self.last_hand_time = time.time()
-            self.word_spoken = False
             
             for hand_landmarks in self.extractor.hands_result.hand_landmarks:
                 points = []
@@ -228,6 +227,9 @@ class SignLanguageProcessor(VideoProcessorBase):
                     if confidence >= 0.80 and self.stability_buffer.count(prediction) >= 3:
                         current_time = time.time()
                         if prediction != self.last_added_letter or (current_time - self.last_addition_time > 1.5):
+                            if self.word_spoken:
+                                self.current_word = ""
+                                self.word_spoken = False
                             self.current_word += prediction
                             self.last_added_letter = prediction
                             self.last_addition_time = current_time
@@ -241,7 +243,6 @@ class SignLanguageProcessor(VideoProcessorBase):
             if not self.word_spoken and self.current_word and (time.time() - self.last_hand_time > 2.0):
                 self.new_words.append(self.current_word)
                 self.word_spoken = True
-                self.current_word = ""
 
         # Draw dynamic reference image on the black screen canvas
         target_letter = self.animation_char
