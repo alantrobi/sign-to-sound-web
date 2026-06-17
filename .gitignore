@@ -1,0 +1,7 @@
+__pycache__/
+*.wav
+*.zip
+hand_landmarker.task
+isl_model/
+.venv/
+venv/
