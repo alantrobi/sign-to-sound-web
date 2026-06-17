@@ -85,6 +85,19 @@ st.markdown("""
     div[data-testid="stWebRTCStreamer"] video {
         pointer-events: none !important; /* Disables double click/tapping controls */
     }
+    /* Hide native browser video controls and play/pause overlays */
+    video::-webkit-media-controls {
+        display: none !important;
+    }
+    video::-webkit-media-controls-play-button {
+        display: none !important;
+    }
+    video::-webkit-media-controls-panel {
+        display: none !important;
+    }
+    video::-webkit-media-controls-start-playback-button {
+        display: none !important;
+    }
     div[data-testid="stWebRTCStreamer"] select {
         display: none !important; /* Hides camera select dropdown */
     }
@@ -149,7 +162,12 @@ class SignLanguageProcessor(VideoProcessorBase):
         self.sequence = []
         self.current_emotion = "Neutral"
         self.new_letters = []  # Queue of newly confirmed letters
+        self.new_words = []    # Queue of newly confirmed compiled words to speak
         self.animation_char = ""  # Sync from main thread
+        
+        # Automatic word speech tracking
+        self.last_hand_time = time.time()
+        self.word_spoken = True
 
     def recv(self, frame):
         img = frame.to_ndarray(format="bgr24")
@@ -170,6 +188,9 @@ class SignLanguageProcessor(VideoProcessorBase):
         
         # Draw hand landmarks on black canvas
         if self.extractor.hands_result and self.extractor.hands_result.hand_landmarks:
+            self.last_hand_time = time.time()
+            self.word_spoken = False
+            
             for hand_landmarks in self.extractor.hands_result.hand_landmarks:
                 points = []
                 for lm in hand_landmarks:
@@ -215,6 +236,12 @@ class SignLanguageProcessor(VideoProcessorBase):
             self.sequence = []
             self.stability_buffer = []
             self.last_added_letter = ""
+            
+            # Auto-speak compiled word if hand is gone for more than 2.0 seconds
+            if not self.word_spoken and self.current_word and (time.time() - self.last_hand_time > 2.0):
+                self.new_words.append(self.current_word)
+                self.word_spoken = True
+                self.current_word = ""
 
         # Draw dynamic reference image on the black screen canvas
         target_letter = self.animation_char
@@ -245,7 +272,13 @@ with col1:
                 {"urls": ["stun:stun.l.google.com:19302"]},
                 {"urls": ["stun:openrelay.metered.ca:80"]},
                 {
-                    "urls": ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443"],
+                    "urls": [
+                        "turn:openrelay.metered.ca:80?transport=udp",
+                        "turn:openrelay.metered.ca:80?transport=tcp",
+                        "turn:openrelay.metered.ca:443?transport=udp",
+                        "turn:openrelay.metered.ca:443?transport=tcp",
+                        "turns:openrelay.metered.ca:443?transport=tcp"
+                    ],
                     "username": "openrelayproject",
                     "credential": "openrelayproject"
                 }
@@ -326,10 +359,10 @@ if ctx.state.playing:
             # Sync animation state to background WebRTC thread
             ctx.video_processor.animation_char = st.session_state.animation_char
             
-            # Read and speak any new confirmed letters
-            if ctx.video_processor.new_letters:
-                new_letter = ctx.video_processor.new_letters.pop(0)
-                speak_web(new_letter)
+            # Read and speak any new confirmed compiled words
+            if hasattr(ctx.video_processor, "new_words") and ctx.video_processor.new_words:
+                new_word = ctx.video_processor.new_words.pop(0)
+                speak_web(new_word.lower())
             
             # Tracking status text
             if ctx.video_processor.extractor.hands_result and ctx.video_processor.extractor.hands_result.hand_landmarks:
