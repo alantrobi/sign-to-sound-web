@@ -270,17 +270,17 @@ with col1:
         rtc_configuration=RTCConfiguration({
             "iceServers": [
                 {"urls": ["stun:stun.l.google.com:19302"]},
-                {"urls": ["stun:openrelay.metered.ca:80"]},
+                {"urls": ["stun:global.relay.metered.ca:80"]},
                 {
                     "urls": [
-                        "turn:openrelay.metered.ca:80?transport=udp",
-                        "turn:openrelay.metered.ca:80?transport=tcp",
-                        "turn:openrelay.metered.ca:443?transport=udp",
-                        "turn:openrelay.metered.ca:443?transport=tcp",
-                        "turns:openrelay.metered.ca:443?transport=tcp"
+                        "turn:global.relay.metered.ca:80?transport=udp",
+                        "turn:global.relay.metered.ca:80?transport=tcp",
+                        "turn:global.relay.metered.ca:443?transport=udp",
+                        "turn:global.relay.metered.ca:443?transport=tcp",
+                        "turns:global.relay.metered.ca:443?transport=tcp"
                     ],
-                    "username": "openrelayproject",
-                    "credential": "openrelayproject"
+                    "username": "97fd41c0b15b454f0067c616",
+                    "credential": "6Sdtp/QvAFUenytK"
                 }
             ]
         }),
